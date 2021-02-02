@@ -1,248 +1,248 @@
+#include <type_traits>
+#include <iostream>
+#include <cmath>
+
+using namespace std;
+
 class X {
     public:
-
-        double e( double v ) {
-            return v;
-        }
-
-        double dx( double v ) {
-            return 1;
-        }
+        double e(double k) { return k; }
+        double dx(double k) { return 1; }
 };
 
-class Constant {
+template<typename T1>
+class Value {
     public:
-        Constant( double c ): c(c){}
+        Value(T1 t1): t1(t1) {}
 
-        double e( double v ) {
-            return c;
-        }
+        virtual double e(double k) { return k; }
 
-        double dx( double v ) {
-            return 0;
-        }
-
-    private:
-        double c;
+        virtual double dx(double k) { return 1; }
+    
+    protected:
+        T1 t1;
 };
 
 template<typename T1, typename T2>
-class Values  {
+class Values {
     public:
-        Values( T1 t1, T2 t2 ): t1(t1), t2(t2) {}
+        Values(T1 t1, T2 t2): t1(t1), t2(t2) {}
 
-        virtual double e ( double v ) { return v; }
-
-        virtual double dx( double v ) { return 1; }
+        virtual double e(double k) { return k; }
+        virtual double dx(double k) { return 1; }
     
     protected:
         T1 t1;
         T2 t2;
 };
 
-template<typename T1, typename T2>
-class Soma : public Values<T1, T2> {
+class Constant {
     public:
-        Soma ( T1 t1, T2 t2 ): Values<T1, T2>( t1, t2 ) {}
+        Constant(double c): c(c){}
+        double e(double k) { return c; }
+        double dx(double k) { return 0; }
 
-        double e( double v ) {
-            return this->t1.e( v ) + this->t2.e( v );
-        }
-
-        double dx( double v ) {
-            return this->t1.dx( v ) + this->t2.dx( v );
-        }
+    private:
+        double c;
 };
 
 template<typename T1, typename T2>
-class Subtrai : public Values<T1, T2> {
+class Sum: public Values<T1, T2> {
     public:
-        Subtrai ( T1 t1, T2 t2 ): Values<T1, T2>( t1, t2 ) {}
+        Sum(T1 t1, T2 t2): Values<T1, T2>(t1, t2) {}
 
-        double e( double v ) {
-            return this->t1.e( v ) - this->t2.e( v );
+        double e(double k) {
+            return this->t1.e(k) + this->t2.e(k);
         }
 
-        double dx( double v ) {
-            return this->t1.dx( v ) - this->t2.dx( v );
+        double dx(double k) {
+            return this->t1.dx(k) + this->t2.dx(k);
         }
 };
 
 template<typename T1, typename T2>
-class Multiplica : public Values<T1, T2> {
+class Subtract: public Values<T1, T2> {
     public:
-        Multiplica ( T1 t1, T2 t2 ): Values<T1, T2>( t1, t2 ) {}
+        Subtract(T1 t1, T2 t2): Values<T1, T2>(t1, t2) {}
 
-        double e( double v ) {
-            return this->t1.e( v ) * this->t2.e( v );
+        double e(double v) {
+            return this->t1.e(v) - this->t2.e(v);
         }
 
-        double dx( double v ) {
-            return this->t1.e( v ) * this->t2.dx( v ) + this->t1.dx( v ) * this->t2.e( v );
+        double dx(double v) {
+            return this->t1.dx(v) - this->t2.dx(v);
         }
 };
 
 template<typename T1, typename T2>
-class Divide : public Values<T1, T2> {
+class Multiply: public Values<T1, T2> {
     public:
-        Divide ( T1 t1, T2 t2 ): Values<T1, T2>( t1, t2 ) {}
+        Multiply(T1 t1, T2 t2): Values<T1, T2>(t1, t2) {}
 
-        double e( double v ) {
-            return this->t1.e( v ) / this->t2.e( v );
+        double e(double k) {
+            return this->t1.e(k) * this->t2.e(k);
         }
 
-        double dx( double v ) {
-            return (this->t1.dx( v ) * this->t2.e( v ) - this->t1.e( v ) * this->t2.dx( v )) / ( pow( this->t2.e(v), 2 ) );
+        double dx(double k) {
+            return this->t1.e(k) * this->t2.dx(k) + this->t1.dx(k) * this->t2.e(k);
         }
 };
 
 template<typename T1, typename T2>
-class Exponent : public Values<T1, T2> {
+class Divide: public Values<T1, T2> {
     public:
-        Exponent ( T1 t1, T2 t2 ): Values<T1, T2>( t1, t2 ) {}
+        Divide(T1 t1, T2 t2): Values<T1, T2>(t1, t2) {}
 
-        double e( double v ) {
-            return pow(this->t1.e( v ), this->t2.e( v ));
+        double e(double k) {
+            return this->t1.e(k) / this->t2.e(k);
         }
 
-        double dx( double v ) {
-            return this->t2.e(v) * pow(this->t1.e(v), this->t2.e(v) - 1) * this->t1.dx(v);
-        }
-};
-
-template<typename F>
-class Valor {
-    public:
-        Valor( F f ): f( f ) {}
-
-        virtual double e( double v ) { return v; }
-
-        virtual double dx( double v ) { return 1; }
-    
-    protected:
-        F f;
-};
-
-template<typename F>
-class Seno : public Valor<F> {
-    public:
-        Seno( F f ): Valor<F>( f ) {}
-
-        double e( double v ) {
-            return sin( this->f.e(v) );
-        }
-
-        double dx( double v ) {
-            return cos( this->f.e(v) ) * this->f.dx(v);
-        }
-};
-
-template<typename F>
-class Cosseno : public Valor<F> {
-    public:
-        Cosseno( F f ): Valor<F>( f ) {}
-
-        double e( double v ) {
-            return cos( this->f.e(v) );
-        }
-
-        double dx( double v ) {
-            return -sin( this->f.e(v) ) * this->f.dx(v);
-        }
-};
-
-template<typename F>
-class Exponencial : public Valor<F> {
-    public:
-        Exponencial( F f ): Valor<F>( f ) {}
-
-        double e( double v ) {
-            return exp( this->f.e(v) );
-        }
-
-        double dx( double v ) {
-            return exp( this->f.e(v) ) * this->f.dx(v);
-        }
-};
-
-template<typename F>
-class Logaritmica : public Valor<F> {
-    public:
-        Logaritmica( F f ): Valor<F>( f ) {}
-
-        double e( double v ) {
-            return log( this->f.e(v) );
-        }
-
-        double dx( double v ) {
-            return 1/( this->f.e(v) ) * this->f.dx(v);
+        double dx(double k) {
+            return (this->t1.dx(k) * this->t2.e(k) - this->t1.e(k) * this->t2.dx(k)) /(pow(this->t2.e(k), 2));
         }
 };
 
 template<typename T1, typename T2>
-auto operator + ( T1 t1, T2 t2 ) {
-    if constexpr(std::is_integral_v<T1> || std::is_floating_point_v<T1>)
-        return Soma<Constant, T2>( t1, t2 );
-    else if constexpr(std::is_integral_v<T2> || std::is_floating_point_v<T2>)
-        return Soma<T1, Constant>( t1, t2 );
-    else
-        return Soma<T1, T2>( t1, t2 );
+class Power: public Values<T1, T2> {
+    public:
+        Power(T1 t1, T2 t2): Values<T1, T2>(t1, t2) {}
+
+        double e(double k) {
+            return pow(this->t1.e(k), this->t2.e(k));
+        }
+
+        double dx(double k) {
+            return this->t2.e(k) * pow(this->t1.e(k), this->t2.e(k) - 1) * this->t1.dx(k);
+        }
+};
+
+template<typename T1>
+class Sine: public Value<T1> {
+    public:
+        Sine(T1 t1): Value<T1>(t1) {}
+
+        double e(double v) {
+            return sin(this->t1.e(v));
+        }
+
+        double dx(double v) {
+            return cos(this->t1.e(v)) * this->t1.dx(v);
+        }
+};
+
+template<typename T1>
+class Cosine: public Value<T1> {
+    public:
+        Cosine(T1 t1): Value<T1>(t1) {}
+
+        double e(double v) {
+            return cos(this->t1.e(v));
+        }
+
+        double dx(double v) {
+            return -sin(this->t1.e(v)) * this->t1.dx(v);
+        }
+};
+
+template<typename T1>
+class Exponential: public Value<T1> {
+    public:
+        Exponential(T1 t1): Value<T1>(t1) {}
+
+        double e(double v) {
+            return exp(this->t1.e(v));
+        }
+
+        double dx(double v) {
+            return exp(this->t1.e(v)) * this->t1.dx(v);
+        }
+};
+
+template<typename T1>
+class Logarithm: public Value<T1> {
+    public:
+        Logarithm(T1 t1): Value<T1>(t1) {}
+
+        double e(double v) {
+            return log(this->t1.e(v));
+        }
+
+        double dx(double v) {
+            return 1/(this->t1.e(v)) * this->t1.dx(v);
+        }
+};
+
+template<typename T1>
+Sine<T1> sin(T1 x) {
+    return Sine<T1>(x);
+}
+
+template<typename T1>
+Cosine<T1> cos(T1 x) {
+    return Cosine<T1>(x);
+}
+
+template<typename T1>
+Exponential<T1> exp(T1 x) {
+    return Exponential<T1>(x);
+}
+
+template<typename T1>
+Logarithm<T1> log(T1 x) {
+    return Logarithm<T1>(x);
 }
 
 template<typename T1, typename T2>
-auto operator - ( T1 t1, T2 t2 ) {
-    if constexpr(std::is_integral_v<T1> || std::is_floating_point_v<T1>)
-        return Subtrai<Constant, T2>( t1, t2 );
-    else if constexpr(std::is_integral_v<T2> || std::is_floating_point_v<T2>)
-        return Subtrai<T1, Constant>( t1, t2 );
+auto operator +(T1 t1, T2 t2) {
+    if constexpr(std::is_integral<T1>::value || std::is_floating_point<T1>::value)
+        return Sum<Constant, T2>(t1, t2);
+    else if constexpr(std::is_integral<T2>::value || std::is_floating_point<T2>::value)
+        return Sum<T1, Constant>(t1, t2);
     else
-        return Subtrai<T1, T2>( t1, t2 );
+        return Sum<T1, T2>(t1, t2);
 }
 
 template<typename T1, typename T2>
-auto operator * ( T1 t1, T2 t2 ) {
-    if constexpr(std::is_integral_v<T1> || std::is_floating_point_v<T1>)
-        return Multiplica<Constant, T2>( t1, t2 );
-    else if constexpr(std::is_integral_v<T2> || std::is_floating_point_v<T2>)
-        return Multiplica<T1, Constant>( t1, t2 );
+auto operator *(T1 t1, T2 t2) {
+    if constexpr(std::is_integral<T1>::value || std::is_floating_point<T1>::value)
+        return Multiply<Constant, T2>(t1, t2);
+    else if constexpr(std::is_integral<T2>::value || std::is_floating_point<T2>::value)
+        return Multiply<T1, Constant>(t1, t2);
     else
-        return Multiplica<T1, T2>( t1, t2 );
+        return Multiply<T1, T2>(t1, t2);
 }
 
 template<typename T1, typename T2>
-auto operator / ( T1 t1, T2 t2 ) {
-    if constexpr(std::is_integral_v<T1> || std::is_floating_point_v<T1>)
-        return Divide<Constant, T2>( t1, t2 );
-    else if constexpr(std::is_integral_v<T2> || std::is_floating_point_v<T2>)
-        return Divide<T1, Constant>( t1, t2 );
+auto operator -(T1 t1, T2 t2) {
+    if constexpr(std::is_integral<T1>::value || std::is_floating_point<T1>::value)
+        return Subtract<Constant, T2>(t1, t2);
+    else if constexpr(std::is_integral<T2>::value || std::is_floating_point<T2>::value)
+        return Subtract<T1, Constant>(t1, t2);
     else
-        return Divide<T1, T2>( t1, t2 );
+        return Subtract<T1, T2>(t1, t2);
 }
 
 template<typename T1, typename T2>
-Exponent<T1, Constant> operator ->* ( T1 t1, T2 t2 ) {
+auto operator /(T1 t1, T2 t2) {
+    if constexpr(std::is_integral<T1>::value || std::is_floating_point<T1>::value)
+        return Divide<Constant, T2>(t1, t2);
+    else if constexpr(std::is_integral<T2>::value || std::is_floating_point<T2>::value)
+        return Divide<T1, Constant>(t1, t2);
+    else
+        return Divide<T1, T2>(t1, t2);
+}
+
+template<typename T1, typename T2>
+Power<T1, Constant> operator ->*(T1 t1, T2 t2) {
     static_assert(!std::is_same_v<double, T2> , "Operador de potenciação definido apenas para inteiros");
-    return Exponent<T1, Constant>( t1, t2 );
-}
-
-template<typename T1>
-Seno< T1 > sin( T1 x ) {
-    return Seno< T1 >( x );
-}
-
-template<typename T1>
-Cosseno< T1 > cos( T1 x ) {
-    return Cosseno< T1 >( x );
-}
-
-template<typename T1>
-Exponencial< T1 > exp( T1 x ) {
-    return Exponencial< T1 >( x );
-}
-
-template<typename T1>
-Logaritmica< T1 > log( T1 x ) {
-    return Logaritmica< T1 >( x );
+    return Power<T1, Constant>(t1, t2);
 }
 
 X x;
+
+int main() {
+    double v = 0.1;
+auto f = 1 / (1 + exp( -2*( x - 1 )->*4 ) );
+  
+    cout << "f(" << v << ")=" << f.e(v) << ", f'(" << v << ")=" << f.dx(v) << endl;
+}
